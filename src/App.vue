@@ -1,44 +1,36 @@
 <template>
   <Navbar />
-  <Event :text="text" />
+  <Event :text="text[eventTextNum]" />
+  <!-- 텍스트를 배열로 넣기 -->
+  <SearchBar 
+    :data="data_temp" 
+    @searchMovie="searchMovie($event)"
+  />
   
-  <h1>영화정보</h1>
-  <div v-for="(movie, i) in data" :key="i">
-    <div class="info">
-        <figure>
-        <img :src="`${movie.imgUrl}`" :alt="movie.title" class="item" >
-      </figure>
+  <p>
+    <button @click="showAllMovie" class="btn-all">전체보기</button>
+  </p>
+  <Movies 
+    :data = "data_temp" 
+    @openModal="isModal=true; selectedMovie=$event"
+    @increseLike="increseLike($event)"/>  
 
-      <h3 class = "bg-yellow" :style="textRed">{{movie.title}}</h3>
-      <p>개봉 : {{movie.year}}</p>
-      <p>장르 : {{movie.category}}</p>
-      
-      <button 
-        v-on:click="increseLike(i)">좋아요
-      </button>
-      <span>{{ movie.like }}</span>
-      <p>
-        <button @click="isModal=true">상세보기</button>
-      </p>
-    </div>
-
- 
-  </div>
   <Modal 
-  :data = "data"
-  :isModal = "isModal"
-  :selectedMovie = "selectedMovie"
-  @closeModal="isModal=false"/>
-  <!-- closeModald이라는 이벤트를 전달받아옴 
-  closeModald 이벤트가 발생하면 isModal=false로해라 -->
- 
+    :data = "data"
+    :isModal = "isModal"
+    :selectedMovie = "selectedMovie"
+    @closeModal="isModal=false"
+    />
+    
 </template>
 
 <script>
-import data from './assets/movies' //영화 데이터
+import data from './assets/movies'
 import Navbar from './components/Navbar.vue';
-import Event from './components/Event.vue'; // 이벤트 박스
+import Event from './components/Event.vue'; 
 import Modal from './components/Modal.vue';
+import Movies from './components/Movies.vue';
+import SearchBar from './components/SearchBar.vue';
 
 
 export default {
@@ -46,20 +38,62 @@ export default {
   data() {
     return{
       isModal: false,
-      data: data,
+      data: data, //영화데이터 원본
+      data_temp: [...data], //영화데이터 사본
       selectedMovie: 0,
-      text: "NEPLIX 강렬한 운명의 드라마, 경기크리처",
+      text: [ 
+        'NETPLIX 강렬한 운명의 드라마, 경기크리처',
+        '디즈니 100주년 기념작, 위시',
+        '그날, 대한민국의 운명이 바뀌었다, 서울의 봄'
+      ],
+      eventTextNum: 0,
+      interval: null,
     }
   },
   methods: {
-    increseLike(i) {
-      this.data[i].like += 1;
+    increseLike(id) {
+      // this.data[i].like += 1;
+      this.data.find(movie => {
+        if(movie.id == id) {
+          movie.like += 1;
+        }
+      })
+    },
+    searchMovie(title) {
+      this.data_temp = this.data.filter(movie =>{
+        return movie.title.includes(title);
+      })
+    },
+    showAllMovie() {
+      this.data_temp = [...this.data];
+
     }
   },
+  
   components:{
     Navbar: Navbar,
     Event: Event,
     Modal: Modal,
+    Movies: Movies,
+    SearchBar:SearchBar,
+  },
+  mounted() {
+    console.log('mounted');
+    this.interval = setInterval(()=>{
+      if(this.eventTextNum == this.text.length -1){
+        this.eventTextNum = 0;
+      } else{
+        this.eventTextNum += 1;
+      }
+    }, 3000);
+  },
+  // mounted(마운트 되었을 때)
+  //  setInterval : n초 후에 안에있는 콜백함수 계속 실행
+  // 대신 계속 숫자가 증가하면 안되니 조건문 추가
+  // this.text.length는 배열이므로 0부터시작 한다 그래서 -1
+
+  unmounted() {
+    clearInterval(this.interval); // 인터벌 해제
   }
 }
 </script>
@@ -129,6 +163,9 @@ button {
   width: 80%;
   padding: 20px;
   border-radius: 10px;
+}
+p:has(.btn-all) {
+  text-align: center;
 }
 
 </style>
